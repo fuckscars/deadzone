@@ -1,18 +1,13 @@
--- Load the UI library
 local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/t4FvQb8B"))()
 
--- Load the bypass code from Source.lua
 getgenv().debugInfo = false -- Set to true for more info in console, keep to false if u dont want any logs
 
--- Create the main UI window
 local Window = OrionLib:CreateOrion("Deadzone Classic")
 
--- Create tabs
 local VisualsTab = Window:CreateSection("Visuals")
 local AimlockTab = Window:CreateSection("Aimlock")
 local MiscTab = Window:CreateSection("Misc")
 
--- Visuals: ESP options
 VisualsTab:Toggle("Box ESP", function(state)
     if state then
         for _, player in pairs(game:GetService("Players"):GetPlayers()) do
@@ -90,7 +85,6 @@ VisualsTab:Toggle("Chams", function(state)
     end
 end)
 
--- Aimlock options
 local aimlockEnabled = false
 local aimlockTarget = nil
 local aimlockSmoothness = 1
@@ -108,7 +102,6 @@ AimlockTab:KeyBind("Aimlock Key", Enum.KeyCode.E, function()
     aimlockEnabled = not aimlockEnabled
 end)
 
--- Aimlock functionality
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
@@ -136,7 +129,6 @@ game:GetService("RunService").RenderStepped:Connect(function()
     end
 end)
 
--- Misc options
 MiscTab:Toggle("Target NPCs", function(state)
     if state then
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
@@ -149,5 +141,4 @@ MiscTab:KeyBind("Speed Walk Key", Enum.KeyCode.Q, function()
     char.HumanoidRootPart.Velocity = char.HumanoidRootPart.CFrame.lookVector * 190
 end)
 
--- Initialize the UI
 OrionLib:Init()
