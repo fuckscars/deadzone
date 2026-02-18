@@ -1,6 +1,6 @@
 local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/t4FvQb8B"))()
 
-getgenv().debugInfo = false -- Set to true for more info in console, keep to false if u dont want any logs
+getgenv().debugInfo = false
 
 local Window = OrionLib:CreateOrion("Deadzone Classic")
 
@@ -8,137 +8,203 @@ local VisualsTab = Window:CreateSection("Visuals")
 local AimlockTab = Window:CreateSection("Aimlock")
 local MiscTab = Window:CreateSection("Misc")
 
-VisualsTab:Toggle("Box ESP", function(state)
-    if state then
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer then
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = player.Character
-                highlight.FillColor = Color3.new(1, 0, 0)
-                highlight.OutlineTransparency = 1
-            end
-        end
-    else
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer then
-                if player.Character:FindFirstChild("Highlight") then
-                    player.Character.Highlight:Destroy()
-                end
-            end
-        end
-    end
-end)
+local ESP_SETTINGS = {
+    BoxOutlineColor = Color3.new(0, 0, 0),
+    BoxColor = Color3.new(1, 1, 1),
+    FilledBoxColor = Color3.new(1, 1, 1),
+    NameColor = Color3.new(1, 1, 1),
+    HealthOutlineColor = Color3.new(0, 0, 0),
+    HealthHighColor = Color3.new(0, 1, 0),
+    HealthLowColor = Color3.new(1, 0, 0),
+    HealthColor = Color3.new(1, 1, 1),
+    AnimatedHealthBars = false,
+    DistanceColor = Color3.new(1, 1, 1),
+    HealthBasedColor = false,
+    CharSize = Vector2.new(4, 6),
+    Teamcheck = false,
+    WallCheck = false,
+    Enabled = false,
+    ShowFilledBox = false,
+    ShowBox = false,
+    BoxType = "Normal",
+    ShowName = false,
+    ShowHealth = false,
+    ShowDistance = false,
+    ShowTracer = false,
+    TracerThickness = 1,
+    TracerPosition = "Bottom",
+}
 
-VisualsTab:Toggle("Skeleton ESP", function(state)
-    if state then
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        local adornment = Instance.new("BoxHandleAdornment")
-                        adornment.Parent = part
-                        adornment.Adornee = part
-                        adornment.AlwaysOnTop = true
-                        adornment.ZIndex = 5
-                        adornment.Size = part.Size
-                        adornment.Color3 = Color3.new(0, 1, 0)
-                    end
-                end
-            end
-        end
-    else
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") and part:FindFirstChildOfClass("BoxHandleAdornment") then
-                        part:FindFirstChildOfClass("BoxHandleAdornment"):Destroy()
-                    end
-                end
-            end
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+local cache = {}
+
+local function findAddresses()
+    local dexScript = loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
+    local addresses = {
+        lighting = nil,
+        players = nil
+    }
+
+    for _, obj in pairs(dexScript:GetChildren()) do
+        if obj:IsA("Lighting") then
+            addresses.lighting = obj
+        elseif obj:IsA("Players") then
+            addresses.players = obj
         end
     end
-end)
 
-VisualsTab:Toggle("Chams", function(state)
-    if state then
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.Material = Enum.Material.ForceField
-                        part.Color = Color3.new(0, 0, 1)
-                    end
-                end
-            end
-        end
-    else
-        for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                for _, part in pairs(player.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.Material = Enum.Material.Plastic
-                        part.Color = Color3.new(1, 1, 1)
-                    end
-                end
-            end
-        end
-    end
-end)
-
-local aimlockEnabled = false
-local aimlockTarget = nil
-local aimlockSmoothness = 1
-local aimlockMode = "Hold"
-
-AimlockTab:Dropdown("Aimlock Mode", {"Hold", "Toggle", "Always"}, function(mode)
-    aimlockMode = mode
-end)
-
-AimlockTab:Slider("Smoothness", 1, 100, function(value)
-    aimlockSmoothness = value
-end)
-
-AimlockTab:KeyBind("Aimlock Key", Enum.KeyCode.E, function()
-    aimlockEnabled = not aimlockEnabled
-end)
-
-local function getClosestPlayer()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-        if player ~= game.Players.LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (player.Character.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                closestPlayer = player
-                shortestDistance = distance
-            end
-        end
-    end
-    return closestPlayer
+    return addresses
 end
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    if aimlockEnabled and aimlockMode ~= "Hold" then
-        aimlockTarget = getClosestPlayer()
-        if aimlockTarget and aimlockTarget.Character and aimlockTarget.Character:FindFirstChild("HumanoidRootPart") then
-            local targetPosition = aimlockTarget.Character.HumanoidRootPart.Position
-            local currentPosition = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
-            local direction = (targetPosition - currentPosition).unit
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(currentPosition, currentPosition + direction)
+local function create(class, properties)
+    local drawing = Drawing.new(class)
+    for property, value in pairs(properties) do
+        drawing[property] = value
+    end
+    return drawing
+end
+
+local function createEsp(target)
+    local esp = {
+        tracer = create("Line", {
+            Thickness = ESP_SETTINGS.TracerThickness,
+            Color = ESP_SETTINGS.TracerColor,
+            Transparency = 1
+        }),
+        boxOutline = create("Square", {
+            Color = ESP_SETTINGS.BoxOutlineColor,
+            Thickness = 3,
+            Filled = false
+        }),
+        box = create("Square", {
+            Color = ESP_SETTINGS.BoxColor,
+            Thickness = 1,
+            Filled = false
+        }),
+        filledBox = create("Square", {
+            Color = ESP_SETTINGS.BoxColor,
+            Thickness = 1,
+            Transparency = 0.3,
+            Filled = true
+        }),
+        name = create("Text", {
+            Color = ESP_SETTINGS.NameColor,
+            Outline = true,
+            Center = true,
+            Size = 13
+        }),
+        healthOutline = create("Line", {
+            Thickness = 3,
+            Color = ESP_SETTINGS.HealthOutlineColor
+        }),
+        health = create("Line", {
+            Thickness = 1
+        }),
+        distance = create("Text", {
+            Color = Color3.new(1, 1, 1),
+            Size = 12,
+            Outline = true,
+            Center = true
+        }),
+    }
+
+    cache[target] = esp
+end
+
+local function removeEsp(target)
+    local esp = cache[target]
+    if not esp then return end
+
+    for _, drawing in pairs(esp) do
+        drawing:Remove()
+    end
+
+    cache[target] = nil
+end
+
+local function updateEsp()
+    for target, esp in pairs(cache) do
+        local rootPart = target:FindFirstChild("HumanoidRootPart")
+        local humanoid = target:FindFirstChild("Humanoid")
+        if rootPart and humanoid and ESP_SETTINGS.Enabled then
+            local position, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+            if onScreen then
+                local hrp2D = camera:WorldToViewportPoint(rootPart.Position)
+                local charSize = (camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
+                local boxSize = Vector2.new(math.floor(charSize * 1.4), math.floor(charSize * 1.9))
+                local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.4 / 2), math.floor(hrp2D.Y - charSize * 1.6 / 2))
+
+                if ESP_SETTINGS.ShowName then
+                    esp.name.Visible = true
+                    esp.name.Text = target.Name
+                    esp.name.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 16)
+                    esp.name.Color = ESP_SETTINGS.NameColor
+                else
+                    esp.name.Visible = false
+                end
+
+                if ESP_SETTINGS.ShowFilledBox then
+                    esp.filledBox.Position = boxPosition
+                    esp.filledBox.Size = boxSize
+                    esp.filledBox.Color = ESP_SETTINGS.FilledBoxColor
+                    esp.filledBox.Visible = true
+                else
+                    esp.filledBox.Visible = false
+                end
+
+                if ESP_SETTINGS.ShowBox then
+                    esp.boxOutline.Size = boxSize
+                    esp.boxOutline.Position = boxPosition
+                    esp.box.Size = boxSize
+                    esp.box.Position = boxPosition
+                    esp.box.Color = ESP_SETTINGS.BoxColor
+                    esp.box.Visible = true
+                    esp.boxOutline.Visible = true
+                else
+                    esp.box.Visible = false
+                    esp.boxOutline.Visible = false
+                end
+            else
+                for _, drawing in pairs(esp) do
+                    drawing.Visible = false
+                end
+            end
+        else
+            for _, drawing in pairs(esp) do
+                drawing.Visible = false
+            end
         end
     end
-end)
+end
 
-MiscTab:Toggle("Target NPCs", function(state)
-    if state then
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
+local addresses = findAddresses()
+if addresses.players then
+    for _, player in ipairs(addresses.players:GetPlayers()) do
+        if player ~= localPlayer then
+            createEsp(player)
+        end
     end
+end
+
+RunService.RenderStepped:Connect(updateEsp)
+
+VisualsTab:Toggle("Enable ESP", function(state)
+    ESP_SETTINGS.Enabled = state
 end)
 
-MiscTab:KeyBind("Speed Walk Key", Enum.KeyCode.Q, function()
-    local player = game:GetService('Players').LocalPlayer
-    local char = player.Character
-    char.HumanoidRootPart.Velocity = char.HumanoidRootPart.CFrame.lookVector * 190
+VisualsTab:Toggle("Show Box", function(state)
+    ESP_SETTINGS.ShowBox = state
+end)
+
+VisualsTab:Toggle("Show Filled Box", function(state)
+    ESP_SETTINGS.ShowFilledBox = state
+end)
+
+VisualsTab:Toggle("Show Name", function(state)
+    ESP_SETTINGS.ShowName = state
 end)
 
 OrionLib:Init()
