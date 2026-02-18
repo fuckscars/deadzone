@@ -42,7 +42,15 @@ local camera = workspace.CurrentCamera
 local cache = {}
 
 local function findAddresses()
-    local dexScript = loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
+    local success, dexScript = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
+    end)
+
+    if not success or not dexScript then
+        warn("Failed to load Dex script.")
+        return { lighting = nil, players = nil }
+    end
+
     local addresses = {
         lighting = nil,
         players = nil
@@ -182,7 +190,7 @@ end
 
 local addresses = findAddresses()
 if addresses.players then
-    for _, player in ipairs(addresses.players:GetPlayers()) do
+    for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer then
             createEsp(player)
         end
@@ -205,6 +213,14 @@ end)
 
 VisualsTab:Toggle("Show Name", function(state)
     ESP_SETTINGS.ShowName = state
+end)
+
+VisualsTab:Toggle("Show Distance", function(state)
+    ESP_SETTINGS.ShowDistance = state
+end)
+
+VisualsTab:Toggle("Show Tracer", function(state)
+    ESP_SETTINGS.ShowTracer = state
 end)
 
 OrionLib:Init()
