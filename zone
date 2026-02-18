@@ -41,32 +41,6 @@ local localPlayer = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local cache = {}
 
-local function findAddresses()
-    local success, dexScript = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
-    end)
-
-    if not success or not dexScript then
-        warn("Failed to load Dex script.")
-        return { lighting = nil, players = nil }
-    end
-
-    local addresses = {
-        lighting = nil,
-        players = nil
-    }
-
-    for _, obj in pairs(dexScript:GetChildren()) do
-        if obj:IsA("Lighting") then
-            addresses.lighting = obj
-        elseif obj:IsA("Players") then
-            addresses.players = obj
-        end
-    end
-
-    return addresses
-end
-
 local function create(class, properties)
     local drawing = Drawing.new(class)
     for property, value in pairs(properties) do
@@ -188,14 +162,24 @@ local function updateEsp()
     end
 end
 
-local addresses = findAddresses()
-if addresses.players then
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= localPlayer then
-            createEsp(player)
-        end
+-- Create ESP for all players except local player
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= localPlayer then
+        createEsp(player)
     end
 end
+
+-- Listen for new players joining
+Players.PlayerAdded:Connect(function(player)
+    if player ~= localPlayer then
+        createEsp(player)
+    end
+end)
+
+-- Remove ESP for players who leave
+Players.PlayerRemoving:Connect(function(player)
+    removeEsp(player)
+end)
 
 RunService.RenderStepped:Connect(updateEsp)
 
